@@ -113,11 +113,11 @@ func cmdSeal(secret, pin, out string) error {
 	keyTemplate := tpm2.Public{
 		Type:       tpm2.AlgKeyedHash,
 		NameAlg:    tpm2.AlgSHA256,
-		Attributes: tpm2.FlagFixedTPM | tpm2.FlagFixedParent | tpm2.FlagUserWithAuth,
+		Attributes: tpm2.FlagFixedTPM | tpm2.FlagFixedParent | tpm2.FlagUserWithAuth | tpm2.FlagNoDA,
 	}
-	priv, pub, _, _, _, err := tpm2.CreateKey(rwc, primaryHandle, tpm2.PCRSelection{}, "", pin, keyTemplate)
+	priv, pub, _, _, _, err := tpm2.CreateKeyWithSensitive(rwc, primaryHandle, tpm2.PCRSelection{}, "", pin, keyTemplate, []byte(secret))
 	if err != nil {
-		return fmt.Errorf("CreateKey: %w", err)
+		return fmt.Errorf("CreateKeyWithSensitive: %w", err)
 	}
 
 	// Write blob
@@ -150,7 +150,7 @@ func cmdUnseal(pin, in string) error {
 	defer tpm2.FlushContext(rwc, primaryHandle)
 
 	// Load sealed object with user PIN
-	objHandle, _, err := tpm2.Load(rwc, primaryHandle, pin, pub, priv)
+	objHandle, _, err := tpm2.Load(rwc, primaryHandle, "", pub, priv)
 	if err != nil {
 		return fmt.Errorf("Load: %w", err)
 	}
